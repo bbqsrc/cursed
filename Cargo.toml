@@ -1,0 +1,10 @@
+[package]
+name = "cursed"
+version = "0.0.0-preview.0"
+authors = ["\u202e"]
+edition = "2018"
+description = "It's cursed."
+license = "MIT"
+
+[dependencies]
+libc = "*"
