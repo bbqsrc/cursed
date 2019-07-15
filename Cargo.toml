@@ -1,10 +1,15 @@
 [package]
 name = "cursed"
-version = "0.0.0-preview.0"
-authors = ["\u202e"]
+version = "0.0.1"
+authors = ["Brendan Molloy <brendan@bbqsrc.net>"]
 edition = "2018"
 description = "It's cursed."
-license = "MIT"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-libc = "*"
+libc = "0.2.59"
+parking_lot = "0.9"
+log = "0.4.7"

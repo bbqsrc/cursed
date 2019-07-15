@@ -2,8 +2,20 @@
 #[repr(transparent)]
 pub struct Nullable<T>(*const T);
 
+impl<T> Nullable<T> {
+    pub fn new(ptr: *const T) -> Nullable<T> {
+        Nullable(ptr)
+    }
+}
+
 pub fn null<T>() -> Nullable<T> {
-    Nullable(std::ptr::null() as *const _)
+    Nullable(std::ptr::null())
+}
+
+impl<T> From<crate::Arc<T>> for Nullable<crate::Arc<T>> {
+    fn from(thing: crate::Arc<T>) -> Nullable<crate::Arc<T>> {
+        Nullable(&thing)
+    }
 }
 
 impl<T> From<Option<T>> for Nullable<T> {
@@ -14,6 +26,15 @@ impl<T> From<Option<T>> for Nullable<T> {
         }
     }
 }
+
+// impl<T> From<Option<std::sync::Arc<T>>> for Nullable<T> {
+//     fn from(option: Option<std::sync::Arc<T>>) -> Nullable<T> {
+//         match option {
+//             Some(value) => Nullable(std::sync::Arc::into_raw(value)),
+//             None => null()
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

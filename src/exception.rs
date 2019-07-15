@@ -20,6 +20,7 @@ impl Exception {
 
 impl Drop for Exception {
     fn drop(&mut self) {
+        eprintln!("EXCEPTION DROPPED: {:?}", self.0.as_ptr());
         unsafe { CString::from_raw(self.0.as_ptr() as *mut _) };
     }
 }
