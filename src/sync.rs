@@ -1,5 +1,6 @@
 use libc::c_void;
 
+use crate::nullable::{null, Nullable};
 use std::sync::Arc as RealArc;
 
 #[derive(Debug)]
@@ -16,14 +17,6 @@ impl<T> Arc<T> {
     }
 }
 
-impl<T: ?Sized> std::ops::Deref for Arc<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { &*self.0 }
-    }
-}
-
 impl<T: ?Sized> Arc<T> {
     #[doc(hidden)]
     pub(crate) fn as_ptr(&self) -> *const T {
@@ -34,12 +27,24 @@ impl<T: ?Sized> Arc<T> {
         self.0.is_null()
     }
 
-    pub fn try_as_ref(&self) -> Option<&T> {
+    pub fn as_ref(&self) -> Option<&T> {
         if self.is_null() {
             None
         } else {
             Some(unsafe { &*self.0 })
         }
+    }
+
+    pub fn into_arc(self) -> RealArc<T> {
+        unsafe { RealArc::from_raw(self.0 as *mut T) }
+    }
+}
+
+impl<T: ?Sized> std::ops::Deref for Arc<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*self.0 }
     }
 }
 
@@ -61,5 +66,28 @@ impl<T: ?Sized> Drop for Arc<T> {
 impl<T: ?Sized> From<RealArc<T>> for Arc<T> {
     fn from(arc: RealArc<T>) -> Arc<T> {
         Arc(RealArc::into_raw(arc))
+    }
+}
+
+pub fn nullable_arc<T>(thing: T) -> Nullable<Arc<T>> {
+    Nullable::from(Arc::new(thing))
+}
+
+#[no_mangle]
+pub extern "C" fn arc_clone(arc: Arc<c_void>) -> Nullable<Arc<c_void>> {
+    match arc.is_null() {
+        true => null(),
+        false => Nullable::from(arc.clone()),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn arc_drop(arc: Arc<c_void>) -> bool {
+    match arc.is_null() {
+        true => false,
+        false => {
+            arc.into_arc();
+            true
+        }
     }
 }

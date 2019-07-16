@@ -1,8 +1,8 @@
-use libc::c_char;
-use std::ptr::NonNull;
-use std::ffi::{CString, NulError};
-use std::convert::TryFrom;
 use crate::nullable::{null, Nullable};
+use libc::c_char;
+use std::convert::TryFrom;
+use std::ffi::{CString, NulError};
+use std::ptr::NonNull;
 
 #[repr(transparent)]
 pub struct Exception(NonNull<c_char>);
@@ -42,27 +42,25 @@ impl From<Exception> for CString {
 }
 
 #[inline]
-pub fn throw_message<T, S: AsRef<str>>(msg: S, exception: *mut Exception) -> Nullable<T> {
-    if !exception.is_null() {
+pub fn throw_message<T, S: AsRef<str>>(
+    msg: S,
+    exception: Option<NonNull<Exception>>,
+) -> Nullable<T> {
+    if let Some(ptr) = exception {
         let msg = Exception::try_from(msg.as_ref()).unwrap();
-        unsafe { *exception = msg };
+        unsafe { *ptr.as_ptr() = msg };
     }
     null()
 }
 
 #[inline]
-pub fn throw<T>(e: impl std::fmt::Display, exception: *mut Exception) -> Nullable<T> {
-    println!("Throwing exception: {}", &e);
-    if !exception.is_null() {
-        println!("NOT NULL");
+pub fn throw<T>(e: impl std::fmt::Display, exception: Option<NonNull<Exception>>) -> Nullable<T> {
+    if let Some(ptr) = exception {
         let msg = Exception::try_from(&*format!("{}", e)).unwrap();
-        unsafe { *exception = msg };
+        unsafe { *ptr.as_ptr() = msg };
     }
     null()
 }
 
-
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

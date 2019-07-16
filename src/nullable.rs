@@ -23,7 +23,7 @@ impl<T> From<Option<T>> for Nullable<T> {
     fn from(option: Option<T>) -> Nullable<T> {
         match option {
             Some(value) => Nullable(&value),
-            None => null()
+            None => null(),
         }
     }
 }
@@ -40,15 +40,18 @@ impl<T> From<Option<T>> for Nullable<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     struct TestStruct {
         field1: u64,
-        field2: String
+        field2: String,
     }
 
     #[test]
     fn is_not_null() {
-        let thing = Some(TestStruct { field1: 523, field2: "oh no".into() });
+        let thing = Some(TestStruct {
+            field1: 523,
+            field2: "oh no".into(),
+        });
         let nullable = Nullable::from(thing);
         assert_ne!(nullable.0, null::<TestStruct>().0);
     }

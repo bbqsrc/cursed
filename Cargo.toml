@@ -13,3 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 libc = "0.2.59"
 parking_lot = "0.9"
 log = "0.4.7"
+futures-preview = { version = "0.3.0-alpha.17", optional = true }
+
+[features]
+futures = ["futures-preview"]
