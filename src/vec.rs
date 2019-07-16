@@ -4,6 +4,7 @@ use core::{
     marker::PhantomData,
 };
 use parking_lot::RwLock;
+use alloc::format;
 
 use crate::{
     exception::Exception,

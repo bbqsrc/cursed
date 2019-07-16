@@ -1,9 +1,16 @@
 
 use core::convert::TryFrom;
 use core::ptr::NonNull;
-use alloc::format;
 
 use crate::exception::Exception;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "no-std")] {
+        use alloc::format;
+    } else {
+        use std::format;
+    }
+}
 
 #[inline]
 pub fn not_null<T>(
@@ -49,7 +56,7 @@ macro_rules! try_as_ref {
             Some(r) => r,
             None => {
                 return $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($arc)),
+                    &*format!("{} must not be null", stringify!($arc)),
                     $exception,
                 );
             }
@@ -64,7 +71,7 @@ macro_rules! try_as_mut_ref {
             Some(v) => v,
             None => {
                 let _: $crate::nullable::Nullable<()> = $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($thing)),
+                    &*format!("{} must not be null", stringify!($thing)),
                     $exception,
                 );
                 return $fallback;
@@ -77,7 +84,7 @@ macro_rules! try_as_mut_ref {
             Some(v) => v,
             None => {
                 return $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($thing)),
+                    &*format!("{} must not be null", stringify!($thing)),
                     $exception,
                 );
             }
@@ -91,7 +98,7 @@ macro_rules! try_into_arc {
         match $arc {
             None => {
                 return $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($arc)),
+                    &*format!("{} must not be null", stringify!($arc)),
                     $exception,
                 );
             }
@@ -103,7 +110,7 @@ macro_rules! try_into_arc {
         match $arc {
             None => {
                 let _: $crate::nullable::Nullable<()> = $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($arc)),
+                    &*format!("{} must not be null", stringify!($arc)),
                     $exception,
                 );
                 return $fallback;
@@ -119,7 +126,7 @@ macro_rules! try_as_arc {
         match $inout.as_arc() {
             None => {
                 return $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($arc)),
+                    &*format!("{} must not be null", stringify!($arc)),
                     $exception,
                 );
             }
@@ -131,7 +138,7 @@ macro_rules! try_as_arc {
         match $inout.as_arc() {
             None => {
                 let _: $crate::nullable::Nullable<()> = $crate::exception::throw_message(
-                    &*alloc::format!("{} must not be null", stringify!($arc)),
+                    &*format!("{} must not be null", stringify!($arc)),
                     $exception,
                 );
                 return $fallback;
