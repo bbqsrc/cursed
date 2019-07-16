@@ -1,6 +1,12 @@
 #![feature(const_type_id)]
 #![feature(proc_macro_hygiene)]
 
+#![no_std]
+
+#[cfg(not(feature = "no-std"))]
+extern crate std;
+extern crate alloc;
+
 #[macro_use]
 pub mod macros;
 pub mod exception;
@@ -10,6 +16,7 @@ pub mod inout;
 pub mod nullable;
 pub mod sync;
 pub mod vec;
+mod vendor;
 
 pub mod prelude {
     pub use crate::exception::*;

@@ -1,13 +1,16 @@
+use alloc::{borrow::ToOwned, boxed::Box, string::String, sync::Arc, vec, vec::Vec as RealVec};
+use core::{
+    any::{Any, TypeId},
+    marker::PhantomData,
+};
 use parking_lot::RwLock;
-use std::any::{Any, TypeId};
-use std::marker::PhantomData;
-use std::sync::Arc;
-use std::vec::Vec as RealVec;
 
-use crate::exception::Exception;
-use crate::inout::{In, InOut, InRaw, Out, OutPtr};
-use crate::nullable::Nullable;
-use crate::sync::ArcPtr;
+use crate::{
+    exception::Exception,
+    inout::{In, InOut, InRaw, OutPtr},
+    nullable::Nullable,
+    sync::ArcPtr,
+};
 
 #[derive(Debug, Clone)]
 pub struct TypedVoid(TypeId, Arc<dyn Any + 'static + Send + Sync>);
@@ -26,10 +29,10 @@ impl TypedVoid {
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct ThreadSafePtr<T>(*const T);
+pub(crate) struct ThreadSafePtr<T>(*const T);
 unsafe impl<T> Send for ThreadSafePtr<T> {}
 unsafe impl<T> Sync for ThreadSafePtr<T> {}
-impl<T> std::ops::Deref for ThreadSafePtr<T> {
+impl<T> core::ops::Deref for ThreadSafePtr<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -96,7 +99,7 @@ impl RawVec {
     #[inline]
     fn iter<F, O>(&self, f: F) -> O
     where
-        F: FnOnce(std::slice::Iter<Arc<RawValue>>) -> O,
+        F: FnOnce(core::slice::Iter<Arc<RawValue>>) -> O,
     {
         f(self.vec.read().iter())
     }
@@ -126,12 +129,11 @@ impl RawVec {
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
-pub struct Vec<T>(RawVec, std::marker::PhantomData<T>);
+pub struct Vec<T>(RawVec, PhantomData<T>);
 
 impl<T: Send + Sync + 'static> Vec<T> {
     pub fn new() -> Vec<T> {
-        println!("New vec: {:?}", TypeId::of::<T>());
-        Vec(RawVec::new::<T>(), std::marker::PhantomData)
+        Vec(RawVec::new::<T>(), PhantomData)
     }
 
     pub fn len(&self) -> usize {
@@ -185,8 +187,8 @@ impl<T: Send + Sync + 'static> Vec<T> {
     }
 }
 
-impl<T: Send + Sync + 'static> From<std::vec::Vec<T>> for Vec<T> {
-    fn from(vec: std::vec::Vec<T>) -> Vec<T> {
+impl<T: Send + Sync + 'static> From<RealVec<T>> for Vec<T> {
+    fn from(vec: RealVec<T>) -> Vec<T> {
         let mut out = Vec::new();
         for item in vec.into_iter() {
             out.push(item);
@@ -205,8 +207,8 @@ impl<T: Send + Sync + 'static + Clone> From<&[T]> for Vec<T> {
     }
 }
 
-impl<T: Send + Sync + 'static + Clone> From<&std::vec::Vec<T>> for Vec<T> {
-    fn from(vec: &std::vec::Vec<T>) -> Vec<T> {
+impl<T: Send + Sync + 'static + Clone> From<&RealVec<T>> for Vec<T> {
+    fn from(vec: &RealVec<T>) -> Vec<T> {
         Vec::from(&**vec)
     }
 }
@@ -263,15 +265,15 @@ macro_rules! vec_constructor {
     { $( $ty_name:ident => $ty:ty ),* } => {
         $(
             #[no_mangle]
-            pub static $ty_name: std::any::TypeId = std::any::TypeId::of::<$ty>();
+            pub static $ty_name: TypeId = TypeId::of::<$ty>();
         )*
 
         /// A constructor for `Vec` for the C FFI, accepting types provided from generated constants.
         #[no_mangle]
-        pub extern "C" fn vec_new(ty: TypeId) -> $crate::nullable::Nullable<std::ffi::c_void> {
-            println!("{:?}", ty);
+        pub extern "C" fn vec_new(ty: TypeId) -> $crate::nullable::Nullable<core::ffi::c_void> {
+            // println!("{:?}", ty);
             $(
-                if &ty == &$ty_name { return $crate::nullable::Nullable::new(Vec::<$ty>::new().into_raw() as *mut std::ffi::c_void) }
+                if &ty == &$ty_name { return $crate::nullable::Nullable::new(Vec::<$ty>::new().into_raw() as *mut core::ffi::c_void) }
             )*
             $crate::nullable::null()
         }
@@ -279,7 +281,7 @@ macro_rules! vec_constructor {
         /// A function to free vectors.
         #[no_mangle]
         pub extern "C" fn vec_free(handle: *mut RawVec, ty: TypeId, exception: *mut Exception) {
-            println!("{:?}", ty);
+            // println!("{:?}", ty);
             // TODO: check handle isn't null
             if handle.is_null() {
                 return;
@@ -293,7 +295,7 @@ macro_rules! vec_constructor {
 
         #[no_mangle]
         pub extern "C" fn vec_debug_print(handle: *mut RawVec, ty: TypeId) {
-            println!("{:?}", ty);
+            // println!("{:?}", ty);
             // TODO: check handle isn't null
             if handle.is_null() {
                 return;
@@ -303,10 +305,10 @@ macro_rules! vec_constructor {
                 if &ty == &$ty_name {
                     unsafe {
                         let raw_vec = &*handle;
-                        let v = raw_vec.iter(|x| x.map(|x| std::mem::transmute::<_, &$ty>(x)).collect::<std::vec::Vec<_>>());
+                        let v = raw_vec.iter(|x| x.map(|x| core::mem::transmute::<_, &$ty>(x)).collect::<alloc::vec::Vec<_>>());
 
                         // let ptr = std::mem::transmute::<&RawVec, &Vec<$ty>>(raw_vec);
-                        println!("{:?}", &v);
+                        // println!("{:?}", &v);
                     }
                 }
             )*
@@ -315,27 +317,26 @@ macro_rules! vec_constructor {
     };
 }
 
-use libc::c_char;
-
 vec_constructor! {
     TYPE_STRING => String,
     TYPE_U64 => u64
 }
 
-#[no_mangle]
-pub extern "C" fn string_new(c_str: *const c_char) -> String {
-    let c_str = unsafe { std::ffi::CStr::from_ptr(c_str) };
-    println!("EH: {:?}", &c_str);
-    c_str.to_str().unwrap().to_string()
-}
+// #[no_mangle]
+// pub extern "C" fn string_new(c_str: *const c_char) -> String {
+//     let c_str = unsafe { core::ffi::CStr::from_ptr(c_str) };
+//     // println!("EH: {:?}", &c_str);
+//     c_str.to_str().unwrap().to_string()
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::string::String;
 
     #[test]
     fn constants() {
-        println!("{:?}", TYPE_STRING);
+        // println!("{:?}", TYPE_STRING);
     }
 
     #[test]

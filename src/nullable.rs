@@ -10,7 +10,7 @@ impl<T> Nullable<T> {
 }
 
 pub fn null<T>() -> Nullable<T> {
-    Nullable(std::ptr::null())
+    Nullable(core::ptr::null())
 }
 
 impl<T> From<ArcPtr<T>> for Nullable<ArcPtr<T>> {
@@ -40,6 +40,7 @@ impl<T> From<Option<T>> for Nullable<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::string::String;
 
     struct TestStruct {
         field1: u64,

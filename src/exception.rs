@@ -1,8 +1,17 @@
 use crate::nullable::{null, Nullable};
 use libc::c_char;
-use std::convert::TryFrom;
-use std::ffi::{CString, NulError};
-use std::ptr::NonNull;
+use core::convert::TryFrom;
+use core::ptr::NonNull;
+use core::fmt;
+use alloc::format;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "no-std")] {
+        use crate::vendor::c_str::{NulError, CString};
+    } else if #[cfg(not(feature = "no-std"))] {
+        use std::ffi::{NulError, CString};
+    }
+}
 
 /// A newtype over a raw, owned CString for providing errors over the FFI.
 #[repr(transparent)]
@@ -15,7 +24,7 @@ impl Exception {
 
     pub fn into_c_string(self) -> CString {
         let ret = unsafe { CString::from_raw(self.0.as_ptr() as *mut _) };
-        std::mem::forget(self);
+        core::mem::forget(self);
         ret
     }
 
@@ -25,15 +34,15 @@ impl Exception {
 
     pub fn into_raw(self) -> *mut Exception {
         let ret = self.as_ptr() as *mut _;
-        std::mem::forget(self);
+        core::mem::forget(self);
         ret
     }
 }
 
 impl Drop for Exception {
     fn drop(&mut self) {
-        eprintln!("EXCEPTION DROPPED: {:?}", self.0.as_ptr());
-        unsafe { eprintln!("was: {:?}", CString::from_raw(self.0.as_ptr() as *mut _)) };
+        // eprintln!("EXCEPTION DROPPED: {:?}", self.0.as_ptr());
+        // unsafe { eprintln!("was: {:?}", CString::from_raw(self.0.as_ptr() as *mut _)) };
     }
 }
 
@@ -66,7 +75,7 @@ pub fn throw_message<T, S: AsRef<str>>(
 
 #[inline]
 pub fn throw<T>(
-    e: impl std::fmt::Display,
+    e: impl fmt::Display,
     exception: &crate::inout::OutPtr<Exception>,
 ) -> Nullable<T> {
     if let Some(ptr) = exception.as_ptr() {

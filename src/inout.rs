@@ -1,6 +1,6 @@
-use std::ffi::c_void;
-use std::ptr::NonNull;
-use std::sync::Arc;
+use core::ffi::c_void;
+use core::ptr::NonNull;
+use alloc::sync::Arc;
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -33,7 +33,7 @@ fn as_arc_internal<T, U>(arc: &In<U>) -> Option<Arc<T>> {
     if let Some(arc) = arc.as_ptr() {
         let arc = unsafe { Arc::from_raw(arc.as_ptr() as *const _) };
         let arc1: Arc<T> = Arc::clone(&arc);
-        std::mem::forget(arc);
+        core::mem::forget(arc);
         Some(arc1)
     } else {
         None
@@ -103,7 +103,6 @@ impl<T> OutPtr<T> {
         }
     }
 }
-
 
 #[repr(transparent)]
 #[derive(Debug)]

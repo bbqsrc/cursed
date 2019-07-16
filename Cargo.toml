@@ -10,10 +10,13 @@ license = "MIT OR Apache-2.0"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-libc = "0.2.59"
+libc = "0.2.60"
 parking_lot = "0.9"
 log = "0.4.7"
 futures-preview = { version = "0.3.0-alpha.17", optional = true }
+memchr = { version = "2", default-features = false, optional = true }
+cfg-if = "0.1.9"
 
 [features]
+no-std = ["memchr"]
 futures = ["futures-preview"]

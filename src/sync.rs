@@ -1,5 +1,5 @@
-use libc::c_void;
-use std::sync::Arc;
+use core::ffi::c_void;
+use alloc::sync::Arc;
 
 use crate::nullable::{null, Nullable};
 
@@ -36,7 +36,7 @@ impl<T: ?Sized> ArcPtr<T> {
     }
 }
 
-impl<T: ?Sized> std::ops::Deref for ArcPtr<T> {
+impl<T: ?Sized> core::ops::Deref for ArcPtr<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -48,7 +48,7 @@ impl<T: ?Sized> Clone for ArcPtr<T> {
     fn clone(&self) -> ArcPtr<T> {
         let arc = unsafe { Arc::from_raw(self.0) };
         let arc1 = Arc::clone(&arc);
-        std::mem::forget(arc);
+        core::mem::forget(arc);
         ArcPtr(Arc::into_raw(arc1))
     }
 }
