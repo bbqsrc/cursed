@@ -6,13 +6,13 @@ use std::ptr::NonNull;
 pub fn not_null<T>(
     field: &str,
     ptr: Option<NonNull<T>>,
-    exception: &crate::inout::Out<Exception>,
+    exception: &crate::inout::OutPtr<Exception>,
 ) -> Option<NonNull<T>> {
     if ptr.is_none() {
         if let Some(exception) = exception.as_ptr() {
             unsafe {
                 *exception.as_ptr() =
-                    Exception::try_from(&*format!("{} must not be null", field)).unwrap()
+                    Exception::try_from(&*format!("{} must not be null", field)).unwrap().into_raw()
             };
         }
     }

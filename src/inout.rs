@@ -80,6 +80,33 @@ impl<T> Out<T> {
 
 #[repr(transparent)]
 #[derive(Debug)]
+pub struct OutPtr<T>(*mut *mut T);
+unsafe impl<T> Sync for OutPtr<T> {}
+unsafe impl<T> Send for OutPtr<T> {}
+
+impl<T> OutPtr<T> {
+    #[inline]
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
+    }
+
+    #[inline]
+    pub fn as_ptr(&self) -> Option<NonNull<*mut T>> {
+        NonNull::new(self.0)
+    }
+
+    #[inline]
+    pub unsafe fn as_mut_ref(&mut self) -> Option<&mut *mut T> {
+        match self.is_null() {
+            false => Some(&mut *self.0),
+            true => None,
+        }
+    }
+}
+
+
+#[repr(transparent)]
+#[derive(Debug)]
 pub struct InOut<T>(*mut T);
 unsafe impl<T> Sync for InOut<T> {}
 unsafe impl<T> Send for InOut<T> {}

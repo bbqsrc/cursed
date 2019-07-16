@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::vec::Vec as RealVec;
 
 use crate::exception::Exception;
-use crate::inout::{In, InOut, InRaw, Out};
+use crate::inout::{In, InOut, InRaw, Out, OutPtr};
 use crate::nullable::Nullable;
 use crate::sync::ArcPtr;
 
@@ -212,14 +212,14 @@ impl<T: Send + Sync + 'static + Clone> From<&std::vec::Vec<T>> for Vec<T> {
 }
 
 #[no_mangle]
-pub extern "C" fn vec_len(handle: In<RawVec>, exception: Out<Exception>) -> usize {
+pub extern "C" fn vec_len(handle: In<RawVec>, exception: OutPtr<Exception>) -> usize {
     let handle = try_not_null!(handle.as_ptr(), &exception, 0usize);
     let handle = unsafe { &*handle.as_ptr() };
     handle.len()
 }
 
 #[no_mangle]
-pub extern "C" fn vec_push(mut handle: InOut<RawVec>, value: InRaw, exception: Out<Exception>) {
+pub extern "C" fn vec_push(mut handle: InOut<RawVec>, value: InRaw, exception: OutPtr<Exception>) {
     let handle = unsafe { try_as_mut_ref!(handle, &exception, ()) };
     handle.push(Arc::new(value));
 }
@@ -239,7 +239,7 @@ macro_rules! vec_nullable {
 #[no_mangle]
 pub extern "C" fn vec_pop(
     mut handle: InOut<RawVec>,
-    exception: Out<Exception>,
+    exception: OutPtr<Exception>,
 ) -> Nullable<ArcPtr<RawValue>> {
     let handle = unsafe { try_as_mut_ref!(handle, &exception) };
     vec_nullable!(handle.pop())
@@ -252,7 +252,7 @@ pub extern "C" fn vec_pop(
 pub extern "C" fn vec_get(
     handle: In<RawVec>,
     index: u64,
-    exception: Out<Exception>,
+    exception: OutPtr<Exception>,
 ) -> Nullable<ArcPtr<RawValue>> {
     let handle = unsafe { try_as_ref!(handle, &exception) };
     vec_nullable!(handle.get(index as usize))
