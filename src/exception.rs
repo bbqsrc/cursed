@@ -41,8 +41,8 @@ impl Exception {
 
 impl Drop for Exception {
     fn drop(&mut self) {
-        // eprintln!("EXCEPTION DROPPED: {:?}", self.0.as_ptr());
-        // unsafe { eprintln!("was: {:?}", CString::from_raw(self.0.as_ptr() as *mut _)) };
+        log::debug!("EXCEPTION DROPPED: {:?}", self.0.as_ptr());
+        unsafe { log::debug!("was: {:?}", CString::from_raw(self.0.as_ptr() as *mut _)) };
     }
 }
 

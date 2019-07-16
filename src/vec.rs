@@ -5,6 +5,7 @@ use core::{
 };
 use parking_lot::RwLock;
 use alloc::format;
+use log::debug;
 
 use crate::{
     exception::Exception,
@@ -272,7 +273,7 @@ macro_rules! vec_constructor {
         /// A constructor for `Vec` for the C FFI, accepting types provided from generated constants.
         #[no_mangle]
         pub extern "C" fn vec_new(ty: TypeId) -> $crate::nullable::Nullable<core::ffi::c_void> {
-            // println!("{:?}", ty);
+            debug!("{:?}", ty);
             $(
                 if &ty == &$ty_name { return $crate::nullable::Nullable::new(Vec::<$ty>::new().into_raw() as *mut core::ffi::c_void) }
             )*
@@ -282,7 +283,7 @@ macro_rules! vec_constructor {
         /// A function to free vectors.
         #[no_mangle]
         pub extern "C" fn vec_free(handle: *mut RawVec, ty: TypeId, exception: *mut Exception) {
-            // println!("{:?}", ty);
+            debug!("{:?}", ty);
             // TODO: check handle isn't null
             if handle.is_null() {
                 return;
@@ -296,7 +297,7 @@ macro_rules! vec_constructor {
 
         #[no_mangle]
         pub extern "C" fn vec_debug_print(handle: *mut RawVec, ty: TypeId) {
-            // println!("{:?}", ty);
+            debug!("{:?}", ty);
             // TODO: check handle isn't null
             if handle.is_null() {
                 return;
@@ -309,7 +310,7 @@ macro_rules! vec_constructor {
                         let v = raw_vec.iter(|x| x.map(|x| core::mem::transmute::<_, &$ty>(x)).collect::<alloc::vec::Vec<_>>());
 
                         // let ptr = std::mem::transmute::<&RawVec, &Vec<$ty>>(raw_vec);
-                        // println!("{:?}", &v);
+                        debug!("{:?}", &v);
                     }
                 }
             )*
@@ -326,7 +327,7 @@ vec_constructor! {
 // #[no_mangle]
 // pub extern "C" fn string_new(c_str: *const c_char) -> String {
 //     let c_str = unsafe { core::ffi::CStr::from_ptr(c_str) };
-//     // println!("EH: {:?}", &c_str);
+//     debug!("EH: {:?}", &c_str);
 //     c_str.to_str().unwrap().to_string()
 // }
 
@@ -337,7 +338,7 @@ mod tests {
 
     #[test]
     fn constants() {
-        // println!("{:?}", TYPE_STRING);
+        debug!("{:?}", TYPE_STRING);
     }
 
     #[test]
