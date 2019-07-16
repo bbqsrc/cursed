@@ -91,7 +91,7 @@ macro_rules! try_into_arc {
                     $exception,
                 );
             }
-            Some(arc) => Arc::from_raw(arc.as_ptr() as *const _),
+            Some(arc) => std::sync::Arc::from_raw(arc.as_ptr() as *const _),
         }
     };
 
@@ -104,7 +104,7 @@ macro_rules! try_into_arc {
                 );
                 return $fallback;
             }
-            Some(arc) => Arc::from_raw(arc.as_ptr() as *const _),
+            Some(arc) => std::sync::Arc::from_raw(arc.as_ptr() as *const _),
         }
     };
 }
