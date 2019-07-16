@@ -1,5 +1,6 @@
 use std::ffi::c_void;
 use std::ptr::NonNull;
+use std::sync::Arc;
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -28,10 +29,10 @@ impl<T> In<T> {
 }
 
 #[doc(hidden)]
-fn as_arc_internal<T, U>(arc: &In<U>) -> Option<std::sync::Arc<T>> {
+fn as_arc_internal<T, U>(arc: &In<U>) -> Option<Arc<T>> {
     if let Some(arc) = arc.as_ptr() {
-        let arc = unsafe { std::sync::Arc::from_raw(arc.as_ptr() as *const _) };
-        let arc1: std::sync::Arc<T> = std::sync::Arc::clone(&arc);
+        let arc = unsafe { Arc::from_raw(arc.as_ptr() as *const _) };
+        let arc1: Arc<T> = Arc::clone(&arc);
         std::mem::forget(arc);
         Some(arc1)
     } else {
@@ -39,14 +40,14 @@ fn as_arc_internal<T, U>(arc: &In<U>) -> Option<std::sync::Arc<T>> {
     }
 }
 
-impl<T> In<std::sync::Arc<T>> {
-    pub fn as_arc(&self) -> Option<std::sync::Arc<T>> {
+impl<T> In<Arc<T>> {
+    pub fn as_arc(&self) -> Option<Arc<T>> {
         as_arc_internal(self)
     }
 }
 
 impl<T> In<crate::sync::ArcPtr<T>> {
-    pub fn as_arc(&self) -> Option<std::sync::Arc<T>> {
+    pub fn as_arc(&self) -> Option<Arc<T>> {
         as_arc_internal(self)
     }
 }

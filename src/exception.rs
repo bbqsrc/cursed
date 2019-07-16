@@ -54,7 +54,10 @@ pub fn throw_message<T, S: AsRef<str>>(
 }
 
 #[inline]
-pub fn throw<T>(e: impl std::fmt::Display, exception: &crate::inout::Out<Exception>) -> Nullable<T> {
+pub fn throw<T>(
+    e: impl std::fmt::Display,
+    exception: &crate::inout::Out<Exception>,
+) -> Nullable<T> {
     if let Some(ptr) = exception.as_ptr() {
         let msg = Exception::try_from(&*format!("{}", e)).unwrap();
         unsafe { *ptr.as_ptr() = msg };

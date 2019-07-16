@@ -1,7 +1,7 @@
 use libc::c_void;
+use std::sync::Arc;
 
 use crate::nullable::{null, Nullable};
-use std::sync::Arc;
 
 #[derive(Debug)]
 #[repr(transparent)]
@@ -9,7 +9,7 @@ pub struct ArcPtr<T: ?Sized>(*const T);
 
 impl<T> ArcPtr<T> {
     pub fn new(item: T) -> ArcPtr<T> {
-        ArcPtr::from(std::sync::Arc::new(item))
+        ArcPtr::from(Arc::new(item))
     }
 }
 

@@ -1,7 +1,7 @@
 use parking_lot::RwLock;
 use std::any::{Any, TypeId};
 use std::marker::PhantomData;
-use std::sync::Arc as RealArc;
+use std::sync::Arc;
 use std::vec::Vec as RealVec;
 
 use crate::exception::Exception;
@@ -10,12 +10,12 @@ use crate::nullable::Nullable;
 use crate::sync::ArcPtr;
 
 #[derive(Debug, Clone)]
-pub struct TypedVoid(TypeId, RealArc<dyn Any + 'static + Send + Sync>);
+pub struct TypedVoid(TypeId, Arc<dyn Any + 'static + Send + Sync>);
 unsafe impl Send for TypedVoid {}
 unsafe impl Sync for TypedVoid {}
 
 impl TypedVoid {
-    fn resolve<T: 'static + Send + Sync>(&self) -> Result<RealArc<T>, TypedVoid> {
+    fn resolve<T: 'static + Send + Sync>(&self) -> Result<Arc<T>, TypedVoid> {
         let x = self.clone();
         match x.1.downcast() {
             Ok(v) => Ok(v),
@@ -39,12 +39,12 @@ impl<T> std::ops::Deref for ThreadSafePtr<T> {
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
-pub struct AnyVec(RealArc<RwLock<RealVec<TypedVoid>>>);
+pub struct AnyVec(Arc<RwLock<RealVec<TypedVoid>>>);
 
 impl AnyVec {
     #[inline]
     pub fn new() -> AnyVec {
-        AnyVec(RealArc::new(RwLock::new(RealVec::new())))
+        AnyVec(Arc::new(RwLock::new(RealVec::new())))
     }
 
     #[inline]
@@ -56,20 +56,17 @@ impl AnyVec {
     pub fn push<T: Send + Sync + 'static>(&mut self, item: T) {
         self.0
             .write()
-            .push(TypedVoid(TypeId::of::<T>(), RealArc::new(item)));
+            .push(TypedVoid(TypeId::of::<T>(), Arc::new(item)));
     }
 
     #[inline]
-    pub fn pop<T: Send + Sync + 'static>(&mut self) -> Option<Result<RealArc<T>, TypedVoid>> {
+    pub fn pop<T: Send + Sync + 'static>(&mut self) -> Option<Result<Arc<T>, TypedVoid>> {
         let typed_void = self.0.write().pop()?;
         Some(typed_void.resolve())
     }
 
     #[inline]
-    pub fn get<T: Send + Sync + 'static>(
-        &self,
-        index: usize,
-    ) -> Option<Result<RealArc<T>, TypedVoid>> {
+    pub fn get<T: Send + Sync + 'static>(&self, index: usize) -> Option<Result<Arc<T>, TypedVoid>> {
         let guard = self.0.read();
         let typed_void = guard.get(index)?;
         Some(typed_void.resolve())
@@ -79,7 +76,7 @@ impl AnyVec {
 type RawValue = dyn Any + 'static + Send + Sync;
 #[derive(Debug, Clone)]
 pub struct RawVec {
-    vec: RealArc<RwLock<RealVec<RealArc<RawValue>>>>,
+    vec: Arc<RwLock<RealVec<Arc<RawValue>>>>,
 
     #[cfg(debug_assertions)]
     ty: TypeId,
@@ -89,7 +86,7 @@ impl RawVec {
     #[inline]
     fn new<T: 'static>() -> RawVec {
         RawVec {
-            vec: RealArc::new(RwLock::new(RealVec::new())),
+            vec: Arc::new(RwLock::new(RealVec::new())),
 
             #[cfg(debug_assertions)]
             ty: TypeId::of::<T>(),
@@ -99,7 +96,7 @@ impl RawVec {
     #[inline]
     fn iter<F, O>(&self, f: F) -> O
     where
-        F: FnOnce(std::slice::Iter<RealArc<RawValue>>) -> O,
+        F: FnOnce(std::slice::Iter<Arc<RawValue>>) -> O,
     {
         f(self.vec.read().iter())
     }
@@ -110,20 +107,20 @@ impl RawVec {
     }
 
     #[inline]
-    fn push(&mut self, item: RealArc<RawValue>) {
+    fn push(&mut self, item: Arc<RawValue>) {
         self.vec.write().push(item);
     }
 
     #[inline]
-    fn pop(&mut self) -> Option<RealArc<RawValue>> {
+    fn pop(&mut self) -> Option<Arc<RawValue>> {
         self.vec.write().pop()
     }
 
     #[inline]
-    fn get(&self, index: usize) -> Option<RealArc<RawValue>> {
+    fn get(&self, index: usize) -> Option<Arc<RawValue>> {
         let guard = self.vec.read();
         let item = guard.get(index)?;
-        Some(RealArc::clone(&item))
+        Some(Arc::clone(&item))
     }
 }
 
@@ -142,14 +139,14 @@ impl<T: Send + Sync + 'static> Vec<T> {
     }
 
     pub fn push(&mut self, item: T) {
-        self.0.push(RealArc::new(item));
+        self.0.push(Arc::new(item));
     }
 
-    pub fn pop(&mut self) -> Option<RealArc<T>> {
+    pub fn pop(&mut self) -> Option<Arc<T>> {
         self.0.pop().and_then(|v| v.downcast().ok())
     }
 
-    pub fn get(&self, index: usize) -> Option<RealArc<T>> {
+    pub fn get(&self, index: usize) -> Option<Arc<T>> {
         self.0.get(index).and_then(|v| v.downcast().ok())
     }
 
@@ -166,11 +163,11 @@ impl<T: Send + Sync + 'static> Vec<T> {
         Vec(*raw_vec, PhantomData)
     }
 
-    pub fn to_vec(&self) -> RealVec<RealArc<T>> {
+    pub fn to_vec(&self) -> RealVec<Arc<T>> {
         let mut out = vec![];
         for i in 0..self.len() {
             let v = self.get(i).expect("valid value");
-            out.push(RealArc::clone(&v));
+            out.push(Arc::clone(&v));
         }
         out
     }
@@ -224,7 +221,7 @@ pub extern "C" fn vec_len(handle: In<RawVec>, exception: Out<Exception>) -> usiz
 #[no_mangle]
 pub extern "C" fn vec_push(mut handle: InOut<RawVec>, value: InRaw, exception: Out<Exception>) {
     let handle = unsafe { try_as_mut_ref!(handle, &exception, ()) };
-    handle.push(RealArc::new(value));
+    handle.push(Arc::new(value));
 }
 
 macro_rules! vec_nullable {
@@ -373,7 +370,7 @@ mod tests {
         vec.push(42usize);
         vec.push(102390123usize);
         assert_eq!(vec.len(), 3);
-        assert_eq!(vec.get(1), Some(RealArc::new(42usize)));
+        assert_eq!(vec.get(1), Some(Arc::new(42usize)));
     }
 
     #[test]

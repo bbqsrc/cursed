@@ -28,10 +28,10 @@ impl<T> From<Option<T>> for Nullable<T> {
     }
 }
 
-// impl<T> From<Option<std::sync::ArcPtr<T>>> for Nullable<T> {
-//     fn from(option: Option<std::sync::ArcPtr<T>>) -> Nullable<T> {
+// impl<T> From<Option<ArcPtr<T>>> for Nullable<T> {
+//     fn from(option: Option<ArcPtr<T>>) -> Nullable<T> {
 //         match option {
-//             Some(value) => Nullable(std::sync::Arc::into_raw(value)),
+//             Some(value) => Nullable(Arc::into_raw(value)),
 //             None => null()
 //         }
 //     }
