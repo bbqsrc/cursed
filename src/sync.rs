@@ -1,23 +1,19 @@
 use libc::c_void;
 
 use crate::nullable::{null, Nullable};
-use std::sync::Arc as RealArc;
+use std::sync::Arc;
 
 #[derive(Debug)]
 #[repr(transparent)]
-pub struct Arc<T: ?Sized>(*const T);
+pub struct ArcPtr<T: ?Sized>(*const T);
 
-impl<T> Arc<T> {
-    pub fn new(item: T) -> Arc<T> {
-        Arc::from(std::sync::Arc::new(item))
-    }
-
-    pub(crate) unsafe fn from_raw(ptr: *mut c_void) -> Arc<T> {
-        Arc(ptr as *mut _)
+impl<T> ArcPtr<T> {
+    pub fn new(item: T) -> ArcPtr<T> {
+        ArcPtr::from(std::sync::Arc::new(item))
     }
 }
 
-impl<T: ?Sized> Arc<T> {
+impl<T: ?Sized> ArcPtr<T> {
     #[doc(hidden)]
     pub(crate) fn as_ptr(&self) -> *const T {
         self.0
@@ -35,12 +31,12 @@ impl<T: ?Sized> Arc<T> {
         }
     }
 
-    pub fn into_arc(self) -> RealArc<T> {
-        unsafe { RealArc::from_raw(self.0 as *mut T) }
+    pub fn into_arc(self) -> Arc<T> {
+        unsafe { Arc::from_raw(self.0 as *mut T) }
     }
 }
 
-impl<T: ?Sized> std::ops::Deref for Arc<T> {
+impl<T: ?Sized> std::ops::Deref for ArcPtr<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -48,33 +44,33 @@ impl<T: ?Sized> std::ops::Deref for Arc<T> {
     }
 }
 
-impl<T: ?Sized> Clone for Arc<T> {
-    fn clone(&self) -> Arc<T> {
-        let arc = unsafe { RealArc::from_raw(self.0) };
-        let arc1 = RealArc::clone(&arc);
+impl<T: ?Sized> Clone for ArcPtr<T> {
+    fn clone(&self) -> ArcPtr<T> {
+        let arc = unsafe { Arc::from_raw(self.0) };
+        let arc1 = Arc::clone(&arc);
         std::mem::forget(arc);
-        Arc(RealArc::into_raw(arc1))
+        ArcPtr(Arc::into_raw(arc1))
     }
 }
 
-impl<T: ?Sized> Drop for Arc<T> {
+impl<T: ?Sized> Drop for ArcPtr<T> {
     fn drop(&mut self) {
-        unsafe { RealArc::from_raw(self.0 as *mut c_void) };
+        unsafe { Arc::from_raw(self.0 as *mut c_void) };
     }
 }
 
-impl<T: ?Sized> From<RealArc<T>> for Arc<T> {
-    fn from(arc: RealArc<T>) -> Arc<T> {
-        Arc(RealArc::into_raw(arc))
+impl<T: ?Sized> From<Arc<T>> for ArcPtr<T> {
+    fn from(arc: Arc<T>) -> ArcPtr<T> {
+        ArcPtr(Arc::into_raw(arc))
     }
 }
 
-pub fn nullable_arc<T>(thing: T) -> Nullable<Arc<T>> {
-    Nullable::from(Arc::new(thing))
+pub fn nullable_arc<T>(thing: T) -> Nullable<ArcPtr<T>> {
+    Nullable::from(ArcPtr::new(thing))
 }
 
 #[no_mangle]
-pub extern "C" fn arc_clone(arc: Arc<c_void>) -> Nullable<Arc<c_void>> {
+pub extern "C" fn arc_clone(arc: ArcPtr<c_void>) -> Nullable<ArcPtr<c_void>> {
     match arc.is_null() {
         true => null(),
         false => Nullable::from(arc.clone()),
@@ -82,7 +78,7 @@ pub extern "C" fn arc_clone(arc: Arc<c_void>) -> Nullable<Arc<c_void>> {
 }
 
 #[no_mangle]
-pub extern "C" fn arc_drop(arc: Arc<c_void>) -> bool {
+pub extern "C" fn arc_drop(arc: ArcPtr<c_void>) -> bool {
     match arc.is_null() {
         true => false,
         false => {

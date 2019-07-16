@@ -20,5 +20,5 @@ pub mod prelude {
     pub use crate::nullable::*;
     pub use crate::sync::*;
     pub use crate::vec::*;
-    pub use crate::{try_as_ref, try_as_str, try_into_arc, try_not_null};
+    pub use crate::{try_as_arc, try_as_ref, try_as_str, try_into_arc, try_not_null};
 }

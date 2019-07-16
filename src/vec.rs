@@ -7,7 +7,7 @@ use std::vec::Vec as RealVec;
 use crate::exception::Exception;
 use crate::inout::{In, InOut, InRaw, Out};
 use crate::nullable::Nullable;
-use crate::sync::Arc;
+use crate::sync::ArcPtr;
 
 #[derive(Debug, Clone)]
 pub struct TypedVoid(TypeId, RealArc<dyn Any + 'static + Send + Sync>);
@@ -216,14 +216,14 @@ impl<T: Send + Sync + 'static + Clone> From<&std::vec::Vec<T>> for Vec<T> {
 
 #[no_mangle]
 pub extern "C" fn vec_len(handle: In<RawVec>, exception: Out<Exception>) -> usize {
-    let handle = try_not_null!(handle.as_ptr(), exception.as_ptr(), 0usize);
+    let handle = try_not_null!(handle.as_ptr(), &exception, 0usize);
     let handle = unsafe { &*handle.as_ptr() };
     handle.len()
 }
 
 #[no_mangle]
 pub extern "C" fn vec_push(mut handle: InOut<RawVec>, value: InRaw, exception: Out<Exception>) {
-    let handle = unsafe { try_as_mut_ref!(handle, exception.as_ptr(), ()) };
+    let handle = unsafe { try_as_mut_ref!(handle, &exception, ()) };
     handle.push(RealArc::new(value));
 }
 
@@ -231,7 +231,7 @@ macro_rules! vec_nullable {
     ($thing:expr) => {
         match $thing {
             Some(v) => {
-                let arc = $crate::sync::Arc::from(v);
+                let arc = $crate::sync::ArcPtr::from(v);
                 $crate::nullable::Nullable::new(arc.as_ptr() as *const _)
             }
             None => $crate::nullable::null(),
@@ -243,8 +243,8 @@ macro_rules! vec_nullable {
 pub extern "C" fn vec_pop(
     mut handle: InOut<RawVec>,
     exception: Out<Exception>,
-) -> Nullable<Arc<RawValue>> {
-    let handle = unsafe { try_as_mut_ref!(handle, exception.as_ptr()) };
+) -> Nullable<ArcPtr<RawValue>> {
+    let handle = unsafe { try_as_mut_ref!(handle, &exception) };
     vec_nullable!(handle.pop())
     // item)
 
@@ -256,21 +256,9 @@ pub extern "C" fn vec_get(
     handle: In<RawVec>,
     index: u64,
     exception: Out<Exception>,
-) -> Nullable<Arc<RawValue>> {
-    let handle = unsafe { try_as_ref!(handle, exception.as_ptr()) };
-    // let handle = unsafe { handle.as_mut() };
+) -> Nullable<ArcPtr<RawValue>> {
+    let handle = unsafe { try_as_ref!(handle, &exception) };
     vec_nullable!(handle.get(index as usize))
-    // match handle.get(index as usize) {
-    //     Some(v) => {
-    //         println!("Got: {:?}", v);
-    //         let arc = Arc::from(v);
-    //         Nullable::new(arc.as_ptr() as *const _)
-    //     },
-    //     None => {
-    //         println!("Nothing for index {}", index);
-    //         crate::null()
-    //     }
-    // }
 }
 
 #[macro_export]

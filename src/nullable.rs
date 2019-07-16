@@ -1,4 +1,4 @@
-use crate::sync::Arc;
+use crate::sync::ArcPtr;
 
 #[repr(transparent)]
 pub struct Nullable<T>(*const T);
@@ -13,8 +13,8 @@ pub fn null<T>() -> Nullable<T> {
     Nullable(std::ptr::null())
 }
 
-impl<T> From<Arc<T>> for Nullable<Arc<T>> {
-    fn from(thing: Arc<T>) -> Nullable<Arc<T>> {
+impl<T> From<ArcPtr<T>> for Nullable<ArcPtr<T>> {
+    fn from(thing: ArcPtr<T>) -> Nullable<ArcPtr<T>> {
         Nullable(&thing)
     }
 }
@@ -28,8 +28,8 @@ impl<T> From<Option<T>> for Nullable<T> {
     }
 }
 
-// impl<T> From<Option<std::sync::Arc<T>>> for Nullable<T> {
-//     fn from(option: Option<std::sync::Arc<T>>) -> Nullable<T> {
+// impl<T> From<Option<std::sync::ArcPtr<T>>> for Nullable<T> {
+//     fn from(option: Option<std::sync::ArcPtr<T>>) -> Nullable<T> {
 //         match option {
 //             Some(value) => Nullable(std::sync::Arc::into_raw(value)),
 //             None => null()

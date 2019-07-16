@@ -44,9 +44,9 @@ impl From<Exception> for CString {
 #[inline]
 pub fn throw_message<T, S: AsRef<str>>(
     msg: S,
-    exception: Option<NonNull<Exception>>,
+    exception: &crate::inout::Out<Exception>,
 ) -> Nullable<T> {
-    if let Some(ptr) = exception {
+    if let Some(ptr) = exception.as_ptr() {
         let msg = Exception::try_from(msg.as_ref()).unwrap();
         unsafe { *ptr.as_ptr() = msg };
     }
@@ -54,8 +54,8 @@ pub fn throw_message<T, S: AsRef<str>>(
 }
 
 #[inline]
-pub fn throw<T>(e: impl std::fmt::Display, exception: Option<NonNull<Exception>>) -> Nullable<T> {
-    if let Some(ptr) = exception {
+pub fn throw<T>(e: impl std::fmt::Display, exception: &crate::inout::Out<Exception>) -> Nullable<T> {
+    if let Some(ptr) = exception.as_ptr() {
         let msg = Exception::try_from(&*format!("{}", e)).unwrap();
         unsafe { *ptr.as_ptr() = msg };
     }

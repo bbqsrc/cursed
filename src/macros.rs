@@ -6,10 +6,10 @@ use std::ptr::NonNull;
 pub fn not_null<T>(
     field: &str,
     ptr: Option<NonNull<T>>,
-    exception: Option<NonNull<Exception>>,
+    exception: &crate::inout::Out<Exception>,
 ) -> Option<NonNull<T>> {
     if ptr.is_none() {
-        if let Some(exception) = exception {
+        if let Some(exception) = exception.as_ptr() {
             unsafe {
                 *exception.as_ptr() =
                     Exception::try_from(&*format!("{} must not be null", field)).unwrap()
@@ -42,7 +42,7 @@ macro_rules! try_not_null {
 macro_rules! try_as_ref {
     ($arc:expr, $exception:expr) => {
         match $arc.as_ref() {
-            Some(v) => v,
+            Some(r) => r,
             None => {
                 return $crate::exception::throw_message(
                     &*format!("{} must not be null", stringify!($arc)),
@@ -110,10 +110,38 @@ macro_rules! try_into_arc {
 }
 
 #[macro_export]
+macro_rules! try_as_arc {
+    ($inout:expr, $exception:expr) => {
+        match $inout.as_arc() {
+            None => {
+                return $crate::exception::throw_message(
+                    &*format!("{} must not be null", stringify!($arc)),
+                    $exception,
+                );
+            }
+            Some(arc) => arc,
+        }
+    };
+
+    ($inout:expr, $exception:expr, $fallback:expr) => {
+        match $inout.as_arc() {
+            None => {
+                let _: $crate::nullable::Nullable<()> = $crate::exception::throw_message(
+                    &*format!("{} must not be null", stringify!($arc)),
+                    $exception,
+                );
+                return $fallback;
+            }
+            Some(arc) => arc,
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! try_as_str {
     ($ptr:expr, $exception:expr) => {
-        match $crate::macros::not_null(stringify!($ptr), $ptr, $exception) {
-            Some(ptr) => match std::ffi::CStr::from_ptr(ptr.as_ptr()).to_str() {
+        match $crate::macros::not_null(stringify!($ptr), $ptr.as_ptr(), $exception) {
+            Some(ptr) => match unsafe { std::ffi::CStr::from_ptr(ptr.as_ptr()).to_str() } {
                 Ok(v) => v,
                 Err(e) => return throw(e, $exception),
             },

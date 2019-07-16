@@ -27,7 +27,32 @@ impl<T> In<T> {
     }
 }
 
+#[doc(hidden)]
+fn as_arc_internal<T, U>(arc: &In<U>) -> Option<std::sync::Arc<T>> {
+    if let Some(arc) = arc.as_ptr() {
+        let arc = unsafe { std::sync::Arc::from_raw(arc.as_ptr() as *const _) };
+        let arc1: std::sync::Arc<T> = std::sync::Arc::clone(&arc);
+        std::mem::forget(arc);
+        Some(arc1)
+    } else {
+        None
+    }
+}
+
+impl<T> In<std::sync::Arc<T>> {
+    pub fn as_arc(&self) -> Option<std::sync::Arc<T>> {
+        as_arc_internal(self)
+    }
+}
+
+impl<T> In<crate::sync::ArcPtr<T>> {
+    pub fn as_arc(&self) -> Option<std::sync::Arc<T>> {
+        as_arc_internal(self)
+    }
+}
+
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct Out<T>(*mut T);
 unsafe impl<T> Sync for Out<T> {}
 unsafe impl<T> Send for Out<T> {}
@@ -53,6 +78,7 @@ impl<T> Out<T> {
 }
 
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct InOut<T>(*mut T);
 unsafe impl<T> Sync for InOut<T> {}
 unsafe impl<T> Send for InOut<T> {}
@@ -82,6 +108,16 @@ impl<T> InOut<T> {
             false => Some(&mut *self.0),
             true => None,
         }
+    }
+
+    #[inline]
+    pub fn to_in(&self) -> In<T> {
+        In(self.0)
+    }
+
+    #[inline]
+    pub fn to_out(&self) -> Out<T> {
+        Out(self.0)
     }
 }
 
