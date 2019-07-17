@@ -20,3 +20,4 @@ cfg-if = "0.1.9"
 [features]
 no-std = ["memchr"]
 futures = ["futures-preview"]
+demo = []
