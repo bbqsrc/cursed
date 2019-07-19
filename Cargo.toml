@@ -14,10 +14,10 @@ libc = "0.2.60"
 parking_lot = "0.9"
 log = "0.4.7"
 futures-preview = { version = "0.3.0-alpha.17", optional = true }
-memchr = { version = "2", default-features = false, optional = true }
+memchr = { version = "2", default-features = false }
 cfg-if = "0.1.9"
 
 [features]
-no-std = ["memchr"]
+no-std = []
 futures = ["futures-preview"]
 demo = []
