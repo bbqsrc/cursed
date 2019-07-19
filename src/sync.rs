@@ -1,17 +1,11 @@
-use core::ffi::c_void;
 use alloc::sync::Arc;
+use core::ffi::c_void;
 
 use crate::nullable::{null, Nullable};
 
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct ArcPtr<T: ?Sized>(*const T);
-
-impl<T> ArcPtr<T> {
-    pub fn new(item: T) -> ArcPtr<T> {
-        ArcPtr::from(Arc::new(item))
-    }
-}
 
 impl<T: ?Sized> ArcPtr<T> {
     #[doc(hidden)]
@@ -65,8 +59,14 @@ impl<T: ?Sized> From<Arc<T>> for ArcPtr<T> {
     }
 }
 
+impl<T> From<T> for ArcPtr<T> {
+    fn from(item: T) -> ArcPtr<T> {
+        ArcPtr(Arc::into_raw(Arc::new(item)))
+    }
+}
+
 pub fn nullable_arc<T>(thing: T) -> Nullable<ArcPtr<T>> {
-    Nullable::from(ArcPtr::new(thing))
+    Nullable::from(ArcPtr::from(thing))
 }
 
 #[no_mangle]

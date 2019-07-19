@@ -1,9 +1,9 @@
 use crate::nullable::{null, Nullable};
-use libc::c_char;
-use core::convert::TryFrom;
-use core::ptr::NonNull;
-use core::fmt;
 use alloc::format;
+use core::convert::TryFrom;
+use core::fmt;
+use core::ptr::NonNull;
+use libc::c_char;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "no-std")] {
@@ -74,10 +74,7 @@ pub fn throw_message<T, S: AsRef<str>>(
 }
 
 #[inline]
-pub fn throw<T>(
-    e: impl fmt::Display,
-    exception: &crate::inout::OutPtr<Exception>,
-) -> Nullable<T> {
+pub fn throw<T>(e: impl fmt::Display, exception: &crate::inout::OutPtr<Exception>) -> Nullable<T> {
     if let Some(ptr) = exception.as_ptr() {
         let msg = Exception::try_from(&*format!("{}", e)).unwrap();
         unsafe { *ptr.as_ptr() = msg.into_raw() };

@@ -1,11 +1,11 @@
+use alloc::format;
 use alloc::{borrow::ToOwned, boxed::Box, string::String, sync::Arc, vec, vec::Vec as RealVec};
 use core::{
     any::{Any, TypeId},
     marker::PhantomData,
 };
-use parking_lot::RwLock;
-use alloc::format;
 use log::debug;
+use parking_lot::RwLock;
 
 use crate::{
     exception::Exception,
@@ -157,19 +157,18 @@ impl<T: Send + Sync + 'static> Vec<T> {
         Vec(*raw_vec, PhantomData)
     }
 
-    pub fn to_vec(&self) -> RealVec<Arc<T>> {
-        let mut out = vec![];
-        for i in 0..self.len() {
-            let v = self.get(i).expect("valid value");
-            out.push(Arc::clone(&v));
-        }
-        out
+    pub fn to_vec(&self) -> Option<RealVec<Arc<T>>> {
+        self.0
+            .iter(|x| x.map(|v| Arc::clone(&v).downcast().ok()).collect())
     }
 
     pub fn to_owned_vec(&self) -> RealVec<T::Owned>
     where
         T: ToOwned,
     {
+        // self.0.iter(|x| x.map(|v| {
+        //     (*v).to_owned()
+        // }).collect())
         let mut out = vec![];
         for i in 0..self.len() {
             let v = self.get(i).expect("valid value");
@@ -212,7 +211,7 @@ mod tests {
 
     #[test]
     fn constants() {
-        debug!("{:?}", TYPE_STRING);
+        // debug!("{:?}", TYPE_STRING);
     }
 
     #[test]

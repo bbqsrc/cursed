@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use crate::{
-  inout::{In, OutPtr, InOut, InRaw},
-  exception::Exception,
-  vec::RawVec,
-  sync::ArcPtr,
-  nullable::Nullable
-};
 use super::RawValue;
+use crate::{
+    exception::Exception,
+    inout::{In, InOut, InRaw, OutPtr},
+    nullable::Nullable,
+    sync::ArcPtr,
+    vec::RawVec,
+};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "no-std")] {
@@ -35,7 +35,7 @@ macro_rules! vec_nullable {
         match $thing {
             Some(v) => {
                 let arc = $crate::sync::ArcPtr::from(v);
-                $crate::nullable::Nullable::new(arc.as_ptr() as *const _)
+                $crate::nullable::Nullable::new(&arc)
             }
             None => $crate::nullable::null(),
         }

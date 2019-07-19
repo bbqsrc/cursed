@@ -1,4 +1,3 @@
-
 use core::convert::TryFrom;
 use core::ptr::NonNull;
 
@@ -51,6 +50,20 @@ macro_rules! try_not_null {
 
 #[macro_export]
 macro_rules! try_as_ref {
+    ($arc:expr, $exception:expr, $fallback:expr) => {
+        match $arc.as_ref() {
+            Some(r) => r,
+            None => {
+                let _: Nullable<()> = $crate::exception::throw_message(
+                    &*format!("{} must not be null", stringify!($arc)),
+                    $exception,
+                );
+
+                return $fallback;
+            }
+        }
+    };
+
     ($arc:expr, $exception:expr) => {
         match $arc.as_ref() {
             Some(r) => r,
@@ -150,6 +163,18 @@ macro_rules! try_as_arc {
 
 #[macro_export]
 macro_rules! try_as_str {
+    ($ptr:expr, $exception:expr, $fallback:expr) => {
+        match $crate::macros::not_null(stringify!($ptr), $ptr.as_ptr(), $exception) {
+            Some(ptr) => match unsafe { std::ffi::CStr::from_ptr(ptr.as_ptr()).to_str() } {
+                Ok(v) => v,
+                Err(e) => {
+                    let _: $crate::nullable::Nullable<()> = $crate::exception::throw(e, $exception);
+                    return $fallback;
+                }
+            },
+            None => return $fallback,
+        }
+    };
     ($ptr:expr, $exception:expr) => {
         match $crate::macros::not_null(stringify!($ptr), $ptr.as_ptr(), $exception) {
             Some(ptr) => match unsafe { std::ffi::CStr::from_ptr(ptr.as_ptr()).to_str() } {

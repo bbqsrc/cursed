@@ -1,6 +1,6 @@
+use alloc::sync::Arc;
 use core::ffi::c_void;
 use core::ptr::NonNull;
-use alloc::sync::Arc;
 
 #[repr(transparent)]
 #[derive(Debug)]
