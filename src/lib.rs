@@ -1,6 +1,6 @@
 #![feature(const_type_id)]
 #![feature(proc_macro_hygiene)]
-// #![no_std]
+#![no_std]
 
 extern crate alloc;
 #[cfg(not(feature = "no-std"))]

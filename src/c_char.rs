@@ -1,6 +1,7 @@
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -18,16 +19,16 @@ impl CCharPtr {
     
     pub fn as_str<'a>(&'a self) -> &'a str {
         // Safe because pointer is always a valid C string.
-        let slice = unsafe { std::slice::from_raw_parts(self.as_ptr() as *const u8, self.len()) };
+        let slice = unsafe { core::slice::from_raw_parts(self.as_ptr() as *const u8, self.len()) };
 
         // Safe because pointer is always a valid UTF8 string.
-        unsafe { std::str::from_utf8_unchecked(slice) }
+        unsafe { core::str::from_utf8_unchecked(slice) }
     }
 }
 
 impl Drop for CCharPtr {
     fn drop(&mut self) {
-        println!("Drop: {:?}", self.0);
+        log::debug!("Drop: {:?}", self.0);
         unsafe { Box::from_raw(self.0) };
     }
 }
@@ -51,13 +52,13 @@ impl StringExt for String {
         inner.push(b'\0');
         
         Ok(unsafe {
-            std::mem::transmute::<*mut libc::c_char, CCharPtr>(
+            core::mem::transmute::<*mut libc::c_char, CCharPtr>(
                 {
                     let p = Box::into_raw(
                         inner.into_boxed_slice()
                     ) as *mut libc::c_char;
 
-                    println!("SIN!: {:?}", p);
+                    log::debug!("SIN!: {:?}", p);
                     p
                 }
             )
@@ -86,10 +87,11 @@ mod tests {
     use super::CCharPtr;
     use super::StringExt;
     use alloc::string::String;
+    use alloc::boxed::Box;
 
     #[test]
     fn size() {
-        assert_eq!(std::mem::size_of::<CCharPtr>(), std::mem::size_of::<Box<libc::c_char>>())
+        assert_eq!(core::mem::size_of::<CCharPtr>(), core::mem::size_of::<Box<libc::c_char>>())
     }
 
     #[test]
