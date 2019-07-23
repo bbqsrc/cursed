@@ -37,12 +37,12 @@ impl Drop for CCharPtr {
 pub struct NulError(usize, Vec<u8>);
 
 pub trait StringExt {
-    fn into_c_char(self) -> Result<CCharPtr, NulError>;
-    fn into_arc_c_char(self) -> Result<Arc<CCharPtr>, NulError>;
+    fn into_c_char(self) -> Result<*mut libc::c_char, NulError>;
+    fn into_arc_c_char(self) -> Result<Arc<libc::c_char>, NulError>;
 }
 
 impl StringExt for String {
-    fn into_c_char(self) -> Result<CCharPtr, NulError> {
+    fn into_c_char(self) -> Result<*mut libc::c_char, NulError> {
         let mut inner = self.into_bytes();
 
         if let Some(i) = memchr::memchr(0, &inner) {
@@ -50,23 +50,43 @@ impl StringExt for String {
         }
 
         inner.push(b'\0');
+        let p = Box::into_raw(
+            inner.into_boxed_slice()
+        ) as *mut libc::c_char;
+        Ok(p)
         
-        Ok(unsafe {
-            core::mem::transmute::<*mut libc::c_char, CCharPtr>(
-                {
-                    let p = Box::into_raw(
-                        inner.into_boxed_slice()
-                    ) as *mut libc::c_char;
+        // Ok(CCharPtr(p))
 
-                    log::debug!("SIN!: {:?}", p);
-                    p
-                }
-            )
-        })
+        
+        // Ok(unsafe {
+        //     core::mem::transmute::<*mut libc::c_char, CCharPtr>(
+        //         {
+        //             let p = Box::into_raw(
+        //                 inner.into_boxed_slice()
+        //             ) as *mut libc::c_char;
+
+        //             log::debug!("SIN!: {:?}", p);
+        //             p
+        //         }
+        //     )
+        // })
     }
 
-    fn into_arc_c_char(self) -> Result<Arc<CCharPtr>, NulError> {
+    fn into_arc_c_char(self) -> Result<Arc<*mut libc::c_char>, NulError> {
         Ok(Arc::new(self.into_c_char()?))
+        
+        // Ok(unsafe {
+        //     core::mem::transmute::<*mut libc::c_char, CCharPtr>(
+        //         {
+        //             let p = Box::into_raw(Arc::new(
+        //                 inner.into_boxed_slice()
+        //             ) as *mut libc::c_char;
+
+        //             log::debug!("SIN!: {:?}", p);
+        //             p
+        //         }
+        //     )
+        // })
     }
 }
 

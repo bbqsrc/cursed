@@ -1,14 +1,21 @@
 use alloc::sync::Arc;
+use alloc::boxed::Box;
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct In<T>(*const T);
-unsafe impl<T> Sync for In<T> {}
-unsafe impl<T> Send for In<T> {}
+pub struct In<T: ?Sized>(*const T);
+unsafe impl<T: ?Sized> Sync for In<T> {}
+unsafe impl<T: ?Sized> Send for In<T> {}
 
-impl<T> In<T> {
+impl<T: ?Sized> From<Box<T>> for In<T> {
+    fn from(boxed: Box<T>) -> In<T> {
+        In(Box::into_raw(boxed))
+    }
+}
+
+impl<T: ?Sized> In<T> {
     #[inline]
     pub fn is_null(&self) -> bool {
         self.0.is_null()
@@ -54,11 +61,11 @@ impl<T> In<crate::sync::ArcPtr<T>> {
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct Out<T>(*mut T);
-unsafe impl<T> Sync for Out<T> {}
-unsafe impl<T> Send for Out<T> {}
+pub struct Out<T: ?Sized>(*mut T);
+unsafe impl<T: ?Sized> Sync for Out<T> {}
+unsafe impl<T: ?Sized> Send for Out<T> {}
 
-impl<T> Out<T> {
+impl<T: ?Sized> Out<T> {
     #[inline]
     pub fn is_null(&self) -> bool {
         self.0.is_null()
@@ -80,11 +87,11 @@ impl<T> Out<T> {
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct OutPtr<T>(*mut *mut T);
-unsafe impl<T> Sync for OutPtr<T> {}
-unsafe impl<T> Send for OutPtr<T> {}
+pub struct OutPtr<T: ?Sized>(*mut *mut T);
+unsafe impl<T: ?Sized> Sync for OutPtr<T> {}
+unsafe impl<T: ?Sized> Send for OutPtr<T> {}
 
-impl<T> OutPtr<T> {
+impl<T: ?Sized> OutPtr<T> {
     #[inline]
     pub fn is_null(&self) -> bool {
         self.0.is_null()
@@ -106,11 +113,11 @@ impl<T> OutPtr<T> {
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct InOut<T>(*mut T);
-unsafe impl<T> Sync for InOut<T> {}
-unsafe impl<T> Send for InOut<T> {}
+pub struct InOut<T: ?Sized>(*mut T);
+unsafe impl<T: ?Sized> Sync for InOut<T> {}
+unsafe impl<T: ?Sized> Send for InOut<T> {}
 
-impl<T> InOut<T> {
+impl<T: ?Sized> InOut<T> {
     #[inline]
     pub fn is_null(&self) -> bool {
         self.0.is_null()
